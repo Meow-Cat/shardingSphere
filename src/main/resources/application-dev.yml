@@ -1,0 +1,50 @@
+spring:
+  # 分库分表配置
+  shardingsphere:
+    props:
+      sql-show: true
+    datasource:
+      names: ds_0,ds_1
+      ds_0:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        type: com.zaxxer.hikari.HikariDataSource
+        username: root
+        password: 123456
+        jdbc-url: jdbc:mysql://localhost:3306/ry-log?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+      ds_1:
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        type: com.zaxxer.hikari.HikariDataSource
+        username: root
+        password: 123456
+        jdbc-url: jdbc:mysql://localhost:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    rules:
+      sharding:
+        tables:
+          sys_oper_log:
+            actual-data-nodes: ds_${0..1}.sys_oper_log_${["GET","POST","PUT","DELETE"]}
+            keyGenerateStrategy:
+              column: oper_id
+              keyGeneratorName: snowflake
+            table-strategy:
+              standard:
+                sharding-algorithm-name: table-inline
+                sharding-column: request_method
+            database-strategy:
+              standard:
+                sharding-algorithm-name: database-inline
+                sharding-column: oper_id
+        bindingTables: sys_oper_log
+        sharding-algorithms:
+          database-inline:
+            props:
+              algorithm-expression: ds_${oper_id % 2}
+            type: INLINE
+          table-inline:
+            props:
+              algorithm-expression: sys_oper_log_${request_method}
+            type: INLINE
+        keyGenerators:
+          snowflake:
+            type: SNOWFLAKE
+
+
